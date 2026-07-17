@@ -1,0 +1,32 @@
+---
+import Base from '../../layouts/Base.astro';
+import clinics from '../../data/clinics.json';
+export function getStaticPaths() {
+  const m = {};
+  for (const c of clinics) (m[c.stateSlug] ||= { slug: c.stateSlug, name: c.stateName, st: c.state, list: [] }).list.push(c);
+  return Object.values(m).map(s => ({ params: { state: s.slug }, props: { s } }));
+}
+const { s } = Astro.props;
+const cities = {};
+for (const c of s.list) (cities[c.citySlug] ||= { slug: c.citySlug, city: c.city, n: 0 }).n++;
+const title = `WIC Offices in ${s.name}: ${s.list.length} Clinics by City (Phones & Info)`;
+const desc = `All ${s.list.length} WIC clinics in ${s.name} organized by city, with phone numbers and addresses — plus the 2026-2027 income limits and how to apply.`;
+---
+<Base title={title} desc={desc}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › {s.name}</div>
+  <span class="sello">{s.list.length} clinics · {Object.keys(cities).length} cities</span>
+  <h1 style="font-size:1.65rem">WIC offices in {s.name}</h1>
+  <p class="lede">Every WIC clinic we track in {s.name}, by city — with direct phones for booking your certification appointment. Income limits and the application walkthrough are one tap away.</p>
+  <div class="tarjetas">
+    {Object.values(cities).sort((a,b) => b.n - a.n || a.city.localeCompare(b.city)).map(ci => <a class="tarj" href={`/${s.slug}/${ci.slug}/`}><h3>{ci.city}</h3><p class="sub">{ci.n} {ci.n === 1 ? 'clinic' : 'clinics'}</p></a>)}
+  </div>
+  <h2>Before you call</h2>
+  <div class="tarjetas">
+    <a class="tarj" href="/wic-income-guidelines/"><h3><i class="fa-solid fa-table-list" style="color:var(--coral)"></i> Income limits 2026-2027</h3><p class="sub">$61,050/year for a family of 4 — and the Medicaid shortcut.</p></a>
+    <a class="tarj" href="/how-to-apply-for-wic/"><h3><i class="fa-solid fa-clipboard-check" style="color:var(--coral)"></i> How to apply</h3><p class="sub">The four documents and the same-day eWIC card.</p></a>
+    <a class="tarj" href="/what-does-wic-cover/"><h3><i class="fa-solid fa-basket-shopping" style="color:var(--coral)"></i> What WIC covers</h3><p class="sub">Formula in full, monthly foods, produce dollars, pumps.</p></a>
+  </div>
+  <div class="fuente">Independent directory — clinic details from public sources; confirm by phone.</div>
+</main>
+</Base>

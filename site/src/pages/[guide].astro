@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+import { guides } from '../data/guides.js';
+export function getStaticPaths() {
+  return guides.map(g => ({ params: { guide: g.slug }, props: { g } }));
+}
+const { g } = Astro.props;
+const others = guides.filter(x => x.slug !== g.slug).slice(0, 3);
+const updated = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+const schemaArt = { "@context":"https://schema.org","@type":"Article","headline":g.title,"inLanguage":"en","author":{"@type":"Organization","name":"WIC Clinics"} };
+const schemaFaq = { "@context":"https://schema.org","@type":"FAQPage","mainEntity":g.faq.map(f => ({"@type":"Question","name":f[0],"acceptedAnswer":{"@type":"Answer","text":f[1].replace(/<[^>]+>/g,'')}})) };
+---
+<Base title={g.title} desc={g.desc} schema={schemaArt}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › Guides › {g.short}</div>
+  <span class="sello">WIC guide · verified sources</span>
+  <h1 style="font-size:1.8rem">{g.title}</h1>
+  <div class="linea-meta"><span><i class="fa-regular fa-calendar-check"></i>Updated {updated}</span><span><i class="fa-solid fa-scale-balanced"></i>Sources: USDA FNA · Federal Register 2026-2027</span></div>
+  <div class="nota"><strong>The short answer:</strong> {g.quick}</div>
+  <article>
+  {g.body.map(([t, cnt]) => {
+    if (t === 'p') return <p style="margin:12px 0" set:html={cnt} />;
+    if (t === 'h2') return <h2>{cnt}</h2>;
+    if (t === 'ul') return <ul>{cnt.map(i => <li set:html={i} />)}</ul>;
+    if (t === 'ol') return <ol>{cnt.map(i => <li set:html={i} />)}</ol>;
+    if (t === 'table') return <table class="tabla"><thead><tr>{cnt[0].map(h => <th>{h}</th>)}</tr></thead><tbody>{cnt.slice(1).map(r => <tr>{r.map(d2 => <td set:html={d2} />)}</tr>)}</tbody></table>;
+  })}
+  <h2>Frequently asked questions</h2>
+  {g.faq.map(f => <details class="faq"><summary>{f[0]}</summary><div><p set:html={f[1]} /></div></details>)}
+  </article>
+  <h2>Keep going</h2>
+  <div class="tarjetas">
+    <a class="tarj" href="/find/"><h3><i class="fa-solid fa-magnifying-glass" style="color:var(--coral)"></i> Find your clinic</h3><p class="sub">Every WIC clinic with phone and address.</p></a>
+    {others.map(o => <a class="tarj" href={`/${o.slug}/`}><h3><i class={`fa-solid ${o.icon}`} style="color:var(--coral)"></i> {o.short}</h3><p class="sub">{o.hook}</p></a>)}
+  </div>
+  <div class="fuente">Income figures verified against the USDA notice in the Federal Register (2026-2027 cycle). Rules can vary slightly by state — your clinic confirms specifics.</div>
+</main>
+<script type="application/ld+json" set:html={JSON.stringify(schemaFaq)} />
+</Base>

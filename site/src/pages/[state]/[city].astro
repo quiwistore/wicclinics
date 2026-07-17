@@ -1,0 +1,50 @@
+---
+import Base from '../../layouts/Base.astro';
+import clinics from '../../data/clinics.json';
+export function getStaticPaths() {
+  const m = {};
+  for (const c of clinics) {
+    const k = c.stateSlug + '/' + c.citySlug;
+    (m[k] ||= { stateSlug: c.stateSlug, citySlug: c.citySlug, city: c.city, stateName: c.stateName, st: c.state, list: [] }).list.push(c);
+  }
+  return Object.values(m).map(ci => ({ params: { state: ci.stateSlug, city: ci.citySlug }, props: { ci } }));
+}
+const { ci } = Astro.props;
+const n = ci.list.length;
+const title = `WIC Office${n === 1 ? '' : 's'} in ${ci.city}, ${ci.st}: ${n === 1 ? 'Location, Phone' : n + ' Clinics with Phones'} & How to Apply`;
+const desc = `Where to apply for WIC in ${ci.city}, ${ci.stateName}: ${n} ${n === 1 ? 'clinic' : 'clinics'} with phone and address, current income limits and the documents to bring.`;
+const schemaCol = { "@context":"https://schema.org","@type":"CollectionPage","name":title,
+  "mainEntity":{"@type":"ItemList","numberOfItems":n,"itemListElement":ci.list.map((c,i)=>({"@type":"ListItem","position":i+1,"name":c.name,"url":`https://wicclinics.com/clinic/${c.slug}/`}))}};
+const faq = [
+  { q:`What are the WIC income limits in ${ci.city}?`, a:`${ci.stateName} uses the federal maximum: 185% of poverty. For July 2026-June 2027 that's $40,034/year for a household of 2, $50,542 for 3, $61,050 for 4 — and a pregnancy counts as an extra member. Medicaid, SNAP or TANF enrollment qualifies you automatically regardless of income.` },
+  { q:`How do I apply for WIC in ${ci.city}?`, a:`Call one of the clinics above to book a certification appointment. Bring photo ID, proof of address, proof of income (or your Medicaid/SNAP card) and the children applying. Most families leave the first visit certified, with the eWIC card in hand.` },
+  { q:`Can I get WIC while pregnant with no other kids?`, a:`Yes — pregnancy alone qualifies as a category from the moment it's confirmed, and you count as a household of at least 2 for income. Pregnant applicants also get priority scheduling.` }
+];
+const schemaFaq = { "@context":"https://schema.org","@type":"FAQPage","mainEntity":faq.map(x=>({"@type":"Question","name":x.q,"acceptedAnswer":{"@type":"Answer","text":x.a}}))};
+const crumbs = {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+  {"@type":"ListItem","position":1,"name":"Home","item":"https://wicclinics.com/"},
+  {"@type":"ListItem","position":2,"name":ci.stateName,"item":`https://wicclinics.com/${ci.stateSlug}/`},
+  {"@type":"ListItem","position":3,"name":`WIC in ${ci.city}`}]};
+---
+<Base title={title} desc={desc} schema={schemaCol}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › <a href={`/${ci.stateSlug}/`}>{ci.stateName}</a> › {ci.city}</div>
+  <span class="sello">{n} {n === 1 ? 'clinic' : 'clinics'} · {ci.city}, {ci.st}</span>
+  <h1 style="font-size:1.65rem">WIC offices in {ci.city}, {ci.stateName}</h1>
+  <p class="lede">{n === 1 ? 'The WIC clinic serving' : `The ${n} WIC clinics serving`} {ci.city} — call to book your certification appointment. Pregnant women and infants get priority (10-day maximum wait by federal rule).</p>
+  <div class="tarjetas">
+    {ci.list.map(c => <a class="tarj" href={`/clinic/${c.slug}/`}><h3>{c.name.slice(0, 44)}</h3><p class="sub">{c.street.slice(0, 46)}</p>{c.phone && <p class="sub" style="color:var(--teal);font-weight:700">{c.phone}</p>}</a>)}
+  </div>
+  <h2>Applying in {ci.city}: the short version</h2>
+  <ul>
+    <li><strong>Who qualifies:</strong> pregnant and postpartum women, infants, and children under 5 — applied for by any caregiver, including dads and grandparents. <a href="/wic-eligibility/">Full rules</a>.</li>
+    <li><strong>Income:</strong> up to $61,050/year for a family of 4 (2026-2027 table), or automatic with Medicaid/SNAP/TANF. <a href="/wic-income-guidelines/">Full table</a>.</li>
+    <li><strong>What you get:</strong> monthly foods on an eWIC card, infant formula covered in full, produce dollars, and breastfeeding support. <a href="/what-does-wic-cover/">Details</a>.</li>
+  </ul>
+  <h2>Frequently asked questions</h2>
+  {faq.map(x => <details class="faq"><summary>{x.q}</summary><div><p>{x.a}</p></div></details>)}
+  <div class="fuente">Independent directory. Clinic details from public sources — confirm by phone before visiting.</div>
+</main>
+<script type="application/ld+json" set:html={JSON.stringify(schemaFaq)} />
+<script type="application/ld+json" set:html={JSON.stringify(crumbs)} />
+</Base>

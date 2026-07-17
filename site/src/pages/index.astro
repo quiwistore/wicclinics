@@ -1,0 +1,49 @@
+---
+import Base from '../layouts/Base.astro';
+import clinics from '../data/clinics.json';
+import { guides } from '../data/guides.js';
+const states = {};
+for (const c of clinics) (states[c.stateSlug] ||= { slug: c.stateSlug, name: c.stateName, n: 0 }).n++;
+const topCities = {};
+for (const c of clinics) {
+  const k = c.stateSlug + '/' + c.citySlug;
+  (topCities[k] ||= { url: `/${c.stateSlug}/${c.citySlug}/`, label: `${c.city}, ${c.state}`, n: 0 }).n++;
+}
+const top = Object.values(topCities).sort((a,b) => b.n - a.n).slice(0, 12);
+const title = `WIC Clinics: Find Your Local Office + 2026-2027 Income Limits`;
+const desc = `Find WIC clinics across the U.S. with phones and addresses, check the official 2026-2027 income limits ($61,050 for a family of 4), and apply with our plain-English guides.`;
+---
+<Base title={title} desc={desc}>
+<section class="portada">
+  <div class="wrap" style="padding-top:0;padding-bottom:0">
+    <h1>Find your WIC clinic — and know you qualify before you call</h1>
+    <p>{clinics.length.toLocaleString('en-US')} clinics with direct phone numbers, the income table that took effect July 1, 2026, and the application explained the way a friend would.</p>
+    <form class="buscador" action="/find/" method="get">
+      <input type="search" name="q" placeholder="Your city or ZIP code…" aria-label="Search" />
+      <button class="ir" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Find clinics</button>
+    </form>
+  </div>
+</section>
+<main class="wrap">
+  <h2>Start here</h2>
+  <div class="tarjetas">
+    <a class="tarj" href="/wic-income-guidelines/"><h3><i class="fa-solid fa-table-list" style="color:var(--coral)"></i> Do we qualify?</h3><p class="sub">2026-2027 limits: $61,050/year for a family of 4 — pregnancy counts as +1, and Medicaid qualifies you automatically.</p></a>
+    <a class="tarj" href="/how-to-apply-for-wic/"><h3><i class="fa-solid fa-clipboard-check" style="color:var(--coral)"></i> How to apply</h3><p class="sub">Four documents, one appointment, eWIC card usually the same day.</p></a>
+    <a class="tarj" href="/what-does-wic-cover/"><h3><i class="fa-solid fa-basket-shopping" style="color:var(--coral)"></i> What you get</h3><p class="sub">Formula covered in full, monthly foods, produce dollars, breast pumps.</p></a>
+    <a class="tarj" href="/wic-vs-snap/"><h3><i class="fa-solid fa-scale-balanced" style="color:var(--coral)"></i> WIC vs SNAP</h3><p class="sub">Different programs that stack — and the order to apply in.</p></a>
+  </div>
+
+  <h2>Busiest cities</h2>
+  <div class="tarjetas">
+    {top.map(t => <a class="tarj" href={t.url}><h3>{t.label}</h3><p class="sub">{t.n} clinics</p></a>)}
+  </div>
+
+  <h2>Browse by state</h2>
+  <div class="tarjetas">
+    {Object.values(states).sort((a,b) => a.name.localeCompare(b.name)).map(s => <a class="tarj" href={`/${s.slug}/`}><h3>{s.name}</h3><p class="sub">{s.n} clinics</p></a>)}
+  </div>
+
+  <h2>Why this site exists</h2>
+  <p style="max-width:760px">WIC information is scattered across 90 agency websites, and half the income tables online are from last year. We put the whole country's clinics in one place, keep the numbers synced to the Federal Register, and explain the process without jargon. <strong>We are not the government</strong> — we can't enroll you, we never ask for personal data, and everything here links back to its official source.</p>
+</main>
+</Base>

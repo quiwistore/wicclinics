@@ -1,0 +1,91 @@
+---
+import Base from '../../layouts/Base.astro';
+import clinics from '../../data/clinics.json';
+export function getStaticPaths() {
+  return clinics.map(c => ({ params: { slug: c.slug }, props: { c } }));
+}
+const { c } = Astro.props;
+const hx = [...c.slug].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 997, 3);
+const addr = `${c.street}, ${c.city}, ${c.state} ${c.zip}`;
+const mapQ = encodeURIComponent(`${c.name}, ${addr}`);
+const near = clinics.filter(x => x.citySlug === c.citySlug && x.stateSlug === c.stateSlug && x.slug !== c.slug).slice(0, 5);
+const leads = [
+  `${c.name} is a WIC clinic serving ${c.city}, ${c.stateName}, where families can apply for WIC, complete certifications and pick up nutrition support. Phone and address below, plus what to bring.`,
+  `Looking for WIC in ${c.city}? ${c.name} handles applications, eWIC card services and nutrition appointments for the area. Call ahead to book — details below.`,
+  `This is one of ${c.city}'s WIC locations: ${c.name}. New applications, recertifications and breastfeeding support all start with a phone call to the number below.`,
+  `WIC services for the ${c.city} area are available at ${c.name}. Below: direct phone, address with map, and the four documents that make your first appointment a one-visit process.`,
+  `${c.name} serves WIC families in and around ${c.city}, ${c.stateName} — applications, health checks and benefit issuance. Here's how to reach them and what to expect.`
+];
+const lead = leads[hx % 5];
+const title = `${c.name} — WIC Clinic in ${c.city}, ${c.state} (Phone & Appointments)`;
+const desc = `${c.name} in ${c.city}, ${c.stateName}: ${c.phone ? `phone ${c.phone}, ` : ''}address ${c.street}. How to apply for WIC here, documents needed and appointment info.`;
+const schema = { "@context":"https://schema.org","@type":"GovernmentOffice","name":c.name,
+  "address":{"@type":"PostalAddress","streetAddress":c.street,"addressLocality":c.city,"addressRegion":c.state,"postalCode":c.zip,"addressCountry":"US"},
+  ...(c.phone ? {"telephone": c.phone} : {}),"url":new URL(Astro.url.pathname, Astro.site).href };
+const faq = [
+  { q:`Do I need an appointment at ${c.name}?`, a:`WIC certifications are by appointment at nearly all clinics — call ${c.phone || 'the clinic'} to book. Pregnant women and infants get priority scheduling (federal rules cap their wait at 10 days).` },
+  { q:`What should I bring to apply?`, a:`Four things: photo ID, proof of address, proof of income (recent pay stubs — or your Medicaid, SNAP or TANF card, which counts by itself), and the children applying. Full walkthrough in our application guide.` },
+  { q:`What are the income limits right now?`, a:`For July 2026-June 2027: $40,034/year for a household of 2, $50,542 for 3, $61,050 for 4 (gross income, 185% of poverty). A pregnancy counts as at least one extra household member — and Medicaid, SNAP or TANF enrollment qualifies you automatically.` },
+  { q:`Can fathers or grandparents bring the kids?`, a:`Yes — any parent or legal caregiver can apply for and manage WIC benefits for an eligible child. WIC is not limited to mothers.` }
+];
+const schemaFaq = { "@context":"https://schema.org","@type":"FAQPage","mainEntity":faq.map(x=>({"@type":"Question","name":x.q,"acceptedAnswer":{"@type":"Answer","text":x.a}}))};
+const crumbs = {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+  {"@type":"ListItem","position":1,"name":"Home","item":"https://wicclinics.com/"},
+  {"@type":"ListItem","position":2,"name":c.stateName,"item":`https://wicclinics.com/${c.stateSlug}/`},
+  {"@type":"ListItem","position":3,"name":c.city,"item":`https://wicclinics.com/${c.stateSlug}/${c.citySlug}/`},
+  {"@type":"ListItem","position":4,"name":c.name}]};
+---
+<Base title={title} desc={desc} schema={schema}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › <a href={`/${c.stateSlug}/`}>{c.stateName}</a> › <a href={`/${c.stateSlug}/${c.citySlug}/`}>{c.city}</a> › {c.name.slice(0, 34)}</div>
+  <span class="sello"><i class="fa-solid fa-seedling"></i> WIC clinic · {c.city}, {c.state}</span>
+  <h1 style="font-size:1.65rem">{c.name}</h1>
+  <p class="lede">{lead}</p>
+  <div class="botones">
+    {c.phone && <a class="boton" href={`tel:+1${c.phone.replace(/\D/g,'')}`}><i class="fa-solid fa-phone"></i> {c.phone}</a>}
+    <a class="boton coral" href="/wic-income-guidelines/"><i class="fa-solid fa-table-list"></i> Income limits</a>
+    <a class="boton linea" href="/how-to-apply-for-wic/"><i class="fa-solid fa-clipboard-check"></i> How to apply</a>
+  </div>
+
+  <iframe class="mapa" loading="lazy" src={`https://www.google.com/maps?q=${mapQ}&z=15&output=embed`} title={`Map: ${c.name}`}></iframe>
+  <div class="botones"><a class="boton linea" href={`https://www.google.com/maps/dir/?api=1&destination=${mapQ}`} rel="nofollow noopener" target="_blank"><i class="fa-solid fa-diamond-turn-right"></i> Get directions</a></div>
+
+  <div class="bloque top">
+    <div class="datos">
+      <b>Address</b><span>{addr}</span>
+      {c.phone && <><b>Phone</b><span><a href={`tel:+1${c.phone.replace(/\D/g,'')}`}>{c.phone}</a></span></>}
+      <b>Services</b><span>WIC applications and certifications, eWIC benefits, nutrition counseling and referrals</span>
+      <b>Serves</b><span>Pregnant and postpartum women, infants, and children under 5 in the {c.city} area</span>
+    </div>
+    <p style="margin:10px 0 0;font-size:.83rem;color:var(--mut)">Details from public sources — hours and walk-in policies vary by clinic, so call before visiting.</p>
+  </div>
+
+  <h2>{['Your first visit in 60 seconds', 'Before you go: quick prep', `Applying at ${c.name.split(' ').slice(0,3).join(' ')}: the short version`, 'What to have ready'][hx % 4]}</h2>
+  <ol>
+    <li><strong>Call first</strong> — certifications are by appointment; mention if you're pregnant or applying for an infant (priority scheduling).</li>
+    <li><strong>Bring four things:</strong> photo ID, proof of address, proof of income <em>or your Medicaid/SNAP/TANF card</em>, and the children applying.</li>
+    <li><strong>Expect 30-60 minutes:</strong> paperwork, a free health check (height, weight, iron), and in most states the <strong>eWIC card issued the same day</strong>.</li>
+    <li><strong>Income near the line?</strong> A pregnancy adds a household member, and Medicaid enrollment qualifies you automatically — <a href="/wic-eligibility/">check before ruling yourself out</a>.</li>
+  </ol>
+
+  <h2>Frequently asked questions</h2>
+  {faq.map(x => <details class="faq"><summary>{x.q}</summary><div><p>{x.a}</p></div></details>)}
+
+  {near.length > 0 && <>
+    <h2>Other WIC clinics in {c.city}</h2>
+    <div class="tarjetas">
+      {near.map(n => <a class="tarj" href={`/clinic/${n.slug}/`}><h3>{n.name.slice(0, 42)}</h3><p class="sub">{n.street.slice(0, 44)}{n.phone ? ` · ${n.phone}` : ''}</p></a>)}
+    </div>
+  </>}
+
+  <h2>Related guides</h2>
+  <div class="tarjetas">
+    <a class="tarj" href="/what-does-wic-cover/"><h3><i class="fa-solid fa-basket-shopping" style="color:var(--coral)"></i> What WIC covers</h3><p class="sub">Formula, the food package and produce dollars.</p></a>
+    <a class="tarj" href="/wic-appointment/"><h3><i class="fa-solid fa-calendar-check" style="color:var(--coral)"></i> The appointment</h3><p class="sub">Minute by minute, so nothing surprises you.</p></a>
+    <a class="tarj" href="/wic-vs-snap/"><h3><i class="fa-solid fa-scale-balanced" style="color:var(--coral)"></i> WIC vs SNAP</h3><p class="sub">How they stack, and which to apply for first.</p></a>
+  </div>
+  <div class="fuente">Independent guide — not affiliated with the USDA or any WIC agency. Confirm details with the clinic; only your local agency can enroll you.</div>
+</main>
+<script type="application/ld+json" set:html={JSON.stringify(schemaFaq)} />
+<script type="application/ld+json" set:html={JSON.stringify(crumbs)} />
+</Base>

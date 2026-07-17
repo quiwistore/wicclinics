@@ -1,0 +1,33 @@
+---
+import Base from '../../layouts/Base.astro';
+import clinics from '../../data/clinics.json';
+const states = {};
+for (const c of clinics) (states[c.stateSlug] ||= { slug: c.stateSlug, name: c.stateName, n: 0 }).n++;
+const title = `Find a WIC Clinic: Search ${clinics.length.toLocaleString('en-US')} Locations by City or ZIP`;
+const desc = `Search WIC clinics across the U.S. by name, city or ZIP — with direct phone numbers for booking your appointment, plus income limits and application guides.`;
+---
+<Base title={title} desc={desc}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › Find a clinic</div>
+  <span class="sello">{clinics.length.toLocaleString('en-US')} clinics tracked</span>
+  <h1 style="font-size:1.65rem">Find a WIC clinic near you</h1>
+  <p class="lede">Type a city, ZIP or clinic name — or browse by state below.</p>
+  <input class="filtro" id="q" type="search" placeholder="Search by city, ZIP or clinic name…" autocomplete="off" />
+  <div class="tarjetas" id="hits" style="display:none"></div>
+  <div class="tarjetas" id="states">
+    {Object.values(states).sort((a,b) => a.name.localeCompare(b.name)).map(s => <a class="tarj" href={`/${s.slug}/`}><h3>{s.name}</h3><p class="sub">{s.n} clinics</p></a>)}
+  </div>
+  <div class="fuente">Details from public sources — confirm with the clinic by phone.</div>
+</main>
+<script define:vars={{ mini: clinics.map(c => ({ s: c.slug, n: c.name.slice(0, 46), c: c.city, st: c.state, z: c.zip })) }}>
+const q = document.getElementById('q'), hits = document.getElementById('hits'), st = document.getElementById('states');
+q.addEventListener('input', () => {
+  const v = q.value.trim().toLowerCase();
+  if (v.length < 2) { st.style.display = ''; hits.style.display = 'none'; return; }
+  const r = mini.filter(c => c.n.toLowerCase().includes(v) || c.c.toLowerCase().includes(v) || c.z.startsWith(v)).slice(0, 24);
+  st.style.display = 'none'; hits.style.display = '';
+  hits.innerHTML = r.length ? r.map(c => `<a class="tarj" href="/clinic/${c.s}/"><h3>${c.n}</h3><p class="sub">${c.c}, ${c.st} ${c.z}</p></a>`).join('') : '<p style="padding:14px">No matches — try the state pages below.</p>';
+  if (!r.length) st.style.display = '';
+});
+</script>
+</Base>
