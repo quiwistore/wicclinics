@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import clinics from '../../data/clinics.json';
+import agencies from '../../data/state-agencies.json';
 export function getStaticPaths() {
   const m = {};
   for (const c of clinics) {
@@ -11,14 +12,17 @@ export function getStaticPaths() {
 }
 const { ci } = Astro.props;
 const n = ci.list.length;
+const ALIAS = { 'u-s-virgin-islands': 'virgin-islands' };
+const ag = agencies[ALIAS[ci.stateSlug] || ci.stateSlug] || {};
 const title = `WIC Office${n === 1 ? '' : 's'} in ${ci.city}, ${ci.st}: ${n === 1 ? 'Location, Phone' : n + ' Clinics with Phones'} & How to Apply`;
 const desc = `Where to apply for WIC in ${ci.city}, ${ci.stateName}: ${n} ${n === 1 ? 'clinic' : 'clinics'} with phone and address, current income limits and the documents to bring.`;
 const schemaCol = { "@context":"https://schema.org","@type":"CollectionPage","name":title,
   "mainEntity":{"@type":"ItemList","numberOfItems":n,"itemListElement":ci.list.map((c,i)=>({"@type":"ListItem","position":i+1,"name":c.name,"url":`https://wicclinics.com/clinic/${c.slug}/`}))}};
 const faq = [
-  { q:`What are the WIC income limits in ${ci.city}?`, a:`${ci.stateName} uses the federal maximum: 185% of poverty. For July 2026-June 2027 that's $40,034/year for a household of 2, $50,542 for 3, $61,050 for 4 — and a pregnancy counts as an extra member. Medicaid, SNAP or TANF enrollment qualifies you automatically regardless of income.` },
-  { q:`How do I apply for WIC in ${ci.city}?`, a:`Call one of the clinics above to book a certification appointment. Bring photo ID, proof of address, proof of income (or your Medicaid/SNAP card) and the children applying. Most families leave the first visit certified, with the eWIC card in hand.` },
-  { q:`Can I get WIC while pregnant with no other kids?`, a:`Yes — pregnancy alone qualifies as a category from the moment it's confirmed, and you count as a household of at least 2 for income. Pregnant applicants also get priority scheduling.` }
+  { q: `What documents are required to complete a WIC application in ${ci.stateName}?`, a: `Four things: photo ID for the adult; a birth certificate, crib card or medical record for each child applying; proof of your ${ci.city} address (lease, utility bill or official mail); and proof of income — recent pay stubs, OR simply your Medicaid, SNAP or TANF card, which proves income eligibility by itself. Don't have everything? Go anyway: a sworn statement is generally accepted as a last resort and you typically get 30 days to complete proof.` },
+  { q: `What's the maximum income to qualify for WIC in ${ci.stateName}?`, a: `${ci.stateName} uses the federal maximum of 185% of poverty. For July 2026 through June 2027: $29,526/year for a household of 1, $40,034 for 2, $50,542 for 3, $61,050 for 4, plus $10,508 for each additional member — gross income, before taxes. A pregnancy counts as at least one extra household member, and anyone with Medicaid, SNAP or TANF is automatically income-eligible regardless of these numbers.` },
+  { q: `Can I apply for ${ci.stateName} WIC online?`, a: ag.online ? `Yes — ${ci.stateName} accepts online applications${ag.apply ? ` (${ag.apply.replace(/\.$/, '')})` : ''}. You start online and finish certification at a clinic, where the health check happens and your eWIC card is issued. Starting online usually means a shorter visit.` : `${ci.stateName} does not offer a full online application — enrollment runs through your local clinic${ag.apply ? `: ${ag.apply.toLowerCase().replace(/\.$/, '')}` : ''}. Call one of the ${ci.city} clinics above to book; certification is usually completed in a single visit.` },
+  { q: `Is there a number to call to check WIC benefits in ${ci.stateName}?`, a: ag.tollFree ? `Yes — the ${ci.stateName} WIC state hotline is ${ag.tollFree} (toll-free)${ag.dept ? `, run by the ${ag.dept}` : ''}. Use it for benefit questions, clinic referrals and appointment help. For your eWIC balance, the state WIC app and your last receipt show it instantly, and the clinics listed above answer local questions directly.` : `Your local clinic is the fastest route — each listing above has its direct number. Your eWIC balance also shows in the state WIC app and on your last store receipt.` }
 ];
 const schemaFaq = { "@context":"https://schema.org","@type":"FAQPage","mainEntity":faq.map(x=>({"@type":"Question","name":x.q,"acceptedAnswer":{"@type":"Answer","text":x.a}}))};
 const crumbs = {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
@@ -35,6 +39,11 @@ const crumbs = {"@context":"https://schema.org","@type":"BreadcrumbList","itemLi
   <div class="tarjetas">
     {ci.list.map(c => <a class="tarj" href={`/clinic/${c.slug}/`}><h3>{c.name.slice(0, 44)}</h3><p class="sub">{c.street.slice(0, 46)}</p>{c.phone && <p class="sub" style="color:var(--teal);font-weight:700">{c.phone}</p>}</a>)}
   </div>
+  {(ag.tollFree || ag.online) && <div class="nota">
+    {ag.tollFree && <span><strong>{ci.stateName} WIC hotline:</strong> <a href={`tel:${ag.tollFree.replace(/\D/g,'')}`}>{ag.tollFree}</a> (toll-free) for clinic referrals and benefit questions. </span>}
+    {ag.online && <span><strong>Good news:</strong> {ci.stateName} accepts <a href={`/${ci.stateSlug}/`}>online applications</a> — start at home, finish at the clinic.</span>}
+  </div>}
+
   <h2>Applying in {ci.city}: the short version</h2>
   <ul>
     <li><strong>Who qualifies:</strong> pregnant and postpartum women, infants, and children under 5 — applied for by any caregiver, including dads and grandparents. <a href="/wic-eligibility/">Full rules</a>.</li>

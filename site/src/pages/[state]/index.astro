@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import clinics from '../../data/clinics.json';
+import agencies from '../../data/state-agencies.json';
 export function getStaticPaths() {
   const m = {};
   for (const c of clinics) (m[c.stateSlug] ||= { slug: c.stateSlug, name: c.stateName, st: c.state, list: [] }).list.push(c);
@@ -9,15 +10,31 @@ export function getStaticPaths() {
 const { s } = Astro.props;
 const cities = {};
 for (const c of s.list) (cities[c.citySlug] ||= { slug: c.citySlug, city: c.city, n: 0 }).n++;
-const title = `WIC Offices in ${s.name}: ${s.list.length} Clinics by City (Phones & Info)`;
-const desc = `All ${s.list.length} WIC clinics in ${s.name} organized by city, with phone numbers and addresses — plus the 2026-2027 income limits and how to apply.`;
+const ALIAS = { 'u-s-virgin-islands': 'virgin-islands', 'northern-mariana-islands': 'northern-mariana-islands' };
+const ag = agencies[ALIAS[s.slug] || s.slug] || null;
+const title = `WIC Offices in ${s.name}: ${s.list.length} Clinics${ag && ag.tollFree ? ` + State Hotline ${ag.tollFree}` : ''}`;
+const desc = `All ${s.list.length} WIC clinics in ${s.name} by city with phone numbers${ag && ag.tollFree ? `, the state WIC hotline (${ag.tollFree})` : ''}${ag && ag.online ? ', online application info' : ''} — plus 2026-2027 income limits and how to apply.`;
+const schemaAg = ag ? { "@context":"https://schema.org","@type":"GovernmentOrganization","name":`${s.name} WIC Program`,
+  ...(ag.dept ? {"parentOrganization": {"@type":"GovernmentOrganization","name": ag.dept}} : {}),
+  ...(ag.tollFree ? {"telephone": ag.tollFree} : {}), "areaServed": s.name } : null;
 ---
-<Base title={title} desc={desc}>
+<Base title={title} desc={desc} schema={schemaAg}>
 <main class="wrap">
   <div class="migas"><a href="/">Home</a> › {s.name}</div>
   <span class="sello">{s.list.length} clinics · {Object.keys(cities).length} cities</span>
   <h1 style="font-size:1.65rem">WIC offices in {s.name}</h1>
   <p class="lede">Every WIC clinic we track in {s.name}, by city — with direct phones for booking your certification appointment. Income limits and the application walkthrough are one tap away.</p>
+
+  {ag && (ag.tollFree || ag.dept) && <div class="bloque top">
+    <h3 style="margin-bottom:10px"><i class="fa-solid fa-phone-volume" style="color:var(--coral);margin-right:7px"></i>{s.name} WIC — official contacts</h3>
+    <div class="datos">
+      {ag.tollFree && <><b>State hotline</b><span><a href={`tel:${ag.tollFree.replace(/\D/g,'')}`}><strong>{ag.tollFree}</strong></a> — free, and the fastest way to find your nearest clinic or check status</span></>}
+      {ag.dept && <><b>Agency</b><span>{ag.dept}</span></>}
+      {ag.apply && <><b>How to apply</b><span>{ag.apply}</span></>}
+      {ag.online && <><b>Online option</b><span><span class="pil coral">This state accepts online applications</span> — start online, then complete certification at a clinic</span></>}
+    </div>
+    <p style="margin:10px 0 0;font-size:.83rem;color:var(--mut)">Source: USDA official state agency contact page for {s.name}.</p>
+  </div>}
   <div class="tarjetas">
     {Object.values(cities).sort((a,b) => b.n - a.n || a.city.localeCompare(b.city)).map(ci => <a class="tarj" href={`/${s.slug}/${ci.slug}/`}><h3>{ci.city}</h3><p class="sub">{ci.n} {ci.n === 1 ? 'clinic' : 'clinics'}</p></a>)}
   </div>
