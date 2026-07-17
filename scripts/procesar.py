@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json, re, unicodedata, sys
+import json, re, unicodedata, sys, html as H
 
 STATES = {'AL':'Alabama','AK':'Alaska','AZ':'Arizona','AR':'Arkansas','CA':'California','CO':'Colorado','CT':'Connecticut','DE':'Delaware','FL':'Florida','GA':'Georgia','HI':'Hawaii','ID':'Idaho','IL':'Illinois','IN':'Indiana','IA':'Iowa','KS':'Kansas','KY':'Kentucky','LA':'Louisiana','ME':'Maine','MD':'Maryland','MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MS':'Mississippi','MO':'Missouri','MT':'Montana','NE':'Nebraska','NV':'Nevada','NH':'New Hampshire','NJ':'New Jersey','NM':'New Mexico','NY':'New York','NC':'North Carolina','ND':'North Dakota','OH':'Ohio','OK':'Oklahoma','OR':'Oregon','PA':'Pennsylvania','RI':'Rhode Island','SC':'South Carolina','SD':'South Dakota','TN':'Tennessee','TX':'Texas','UT':'Utah','VT':'Vermont','VA':'Virginia','WA':'Washington','WV':'West Virginia','WI':'Wisconsin','WY':'Wyoming','DC':'District of Columbia','PR':'Puerto Rico','VI':'U.S. Virgin Islands','GU':'Guam','AS':'American Samoa','MP':'Northern Mariana Islands'}
 
@@ -39,6 +39,17 @@ def fmt_tel(t):
     return f'({c[0:3]}) {c[3:6]}-{c[6:10]}' if len(c)==10 else str(t).strip()
 
 ABREV = {'st':'street','str':'street','rd':'road','ave':'avenue','av':'avenue','blvd':'boulevard','hwy':'highway','dr':'drive','ln':'lane','ct':'court','pl':'place','pkwy':'parkway','cir':'circle','tpke':'turnpike','ste':'suite','n':'north','s':'south','e':'east','w':'west','ne':'northeast','nw':'northwest','se':'southeast','sw':'southwest'}
+def desescape(s):
+    t = str(s)
+    for _ in range(3):
+        n = H.unescape(t)
+        if n == t: break
+        t = n
+    t = t.replace('\u2019', "'").replace('\t', ' ')
+    # posesivo: Mary'S -> Mary's ; O'brien -> O'Brien lo maneja titlecase
+    t = re.sub(r"(?<=[a-z])'S\b", "'s", t)
+    return re.sub(r'\s+', ' ', t).strip()
+
 def limpiar_calle(s, city, st):
     s = str(s).strip()
     s = re.sub(r',\s*(USA|United States)\s*$', '', s, flags=re.I)
@@ -56,6 +67,7 @@ items, usados, vistos = [], {}, {}
 for v in d['clinicas'].values():
     if v['state'] not in STATES or not v['name'] or not v['city']: continue
     # dedupe real: mismo nombre + misma calle normalizada + mismo zip = misma clinica cargada 2 veces
+    v['name'] = desescape(v['name']); v['street'] = desescape(v['street']); v['city'] = desescape(v['city'])
     ident = (v['name'].strip().lower(), norm_calle(v['street']), v['zip'])
     if ident in vistos:
         # conservar la version con la calle mas descriptiva (mas larga)
@@ -71,7 +83,7 @@ for v in d['clinicas'].values():
     while slug in usados: slug = f'{base}-{i}'; i += 1
     usados[slug] = 1
     reg = {
-        'slug': slug, 'name': (titlecase(v['name']).replace('Wic', 'WIC') if v['name'].isupper() else v['name'].replace(' Wic', ' WIC')), 'street': limpiar_calle(titlecase(v['street']) if v['street'].isupper() else v['street'], v['city'], v['state']),
+        'slug': slug, 'name': desescape(titlecase(v['name']).replace('Wic', 'WIC') if v['name'].isupper() else v['name'].replace(' Wic', ' WIC')), 'street': limpiar_calle(titlecase(v['street']) if v['street'].isupper() else v['street'], v['city'], v['state']),
         'city': titlecase(v['city']),
         'state': v['state'], 'stateName': STATES[v['state']], 'zip': v['zip'],
         'phone': fmt_tel(v['phone']) if v['phone'] else '',
