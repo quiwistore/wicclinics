@@ -1,19 +1,24 @@
 ---
 import Base from '../../layouts/Base.astro';
 import clinics from '../../data/clinics.json';
+import agencies from '../../data/state-agencies.json';
 export function getStaticPaths() {
   return clinics.map(c => ({ params: { slug: c.slug }, props: { c } }));
 }
 const { c } = Astro.props;
+const ALIAS = { 'u-s-virgin-islands': 'virgin-islands' };
+const ag = agencies[ALIAS[c.stateSlug] || c.stateSlug] || {};
 const hx = [...c.slug].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 997, 3);
 const addr = `${c.street}, ${c.city}, ${c.state} ${c.zip}`;
 const mapQ = encodeURIComponent(`${c.name}, ${addr}`);
 const sameCity = clinics.filter(x => x.citySlug === c.citySlug && x.stateSlug === c.stateSlug && x.slug !== c.slug);
 const near = sameCity.slice(0, 5);
 const calleCorta = c.street.split(',')[0].replace(/\b(Suite|Ste|Unit|Apt|Room|Rm|Floor|Fl)\b.*$/i, '').trim();
+// nombre generico del origen ("WIC Program", "Main Location"): evitar title redundante
+const esGenerico = /^(wic|wic program|wic clinic|wic office|clinic|main|health department|.{0,16}\slocation)$/i.test(c.name.trim());
 // presupuesto: title <= 65 chars reales
-const cola = ` — WIC Clinic in ${c.city}, ${c.state}`;
-const colaCorta = ` — WIC in ${c.city}, ${c.state}`;
+const cola = esGenerico ? ` in ${c.city}, ${c.state} — Address & Phone` : ` — WIC Clinic in ${c.city}, ${c.state}`;
+const colaCorta = esGenerico ? ` in ${c.city}, ${c.state}` : ` — WIC in ${c.city}, ${c.state}`;
 const usarCorta = cola.length + 24 > 65;
 const sufijo = usarCorta ? colaCorta : cola;
 const presu = Math.max(18, 65 - sufijo.length);
@@ -38,12 +43,12 @@ const lead = leads[hx % 5];
 const title = homonimo
   ? `${recortar(nombreBase, Math.max(12, presu - 18))} (${recortar(dif, 16)}) — WIC in ${c.city}, ${c.state}`
   : `${nombreCorto}${sufijo}`;
-const desc = `${c.name} at ${calleCorta}, ${c.city}, ${c.stateName}${c.phone ? ` — phone ${c.phone}` : ''}. How to apply for WIC here, the documents to bring, income limits and appointment info.`;
+const desc = `${esGenerico ? `The ${c.name}` : c.name} at ${calleCorta}, ${c.city}, ${c.stateName}${c.phone ? ` — phone ${c.phone}` : ''}. How to apply for WIC here, the documents to bring, income limits and appointment info.`;
 const schema = { "@context":"https://schema.org","@type":"GovernmentOffice","name":c.name,
   "address":{"@type":"PostalAddress","streetAddress":c.street,"addressLocality":c.city,"addressRegion":c.state,"postalCode":c.zip,"addressCountry":"US"},
   ...(c.phone ? {"telephone": c.phone} : {}),"url":new URL(Astro.url.pathname, Astro.site).href };
 const faq = [
-  { q:`Do I need an appointment at ${c.name}?`, a:`WIC certifications are by appointment at nearly all clinics — call ${c.phone || 'the clinic'} to book. Pregnant women and infants get priority scheduling (federal rules cap their wait at 10 days).` },
+  { q:`Do I need an appointment at ${c.name}?`, a:`WIC certifications are by appointment at nearly all clinics — call ${c.phone || (ag.tollFree ? `the ${c.stateName} WIC line at ${ag.tollFree}` : 'the clinic')} to book. Pregnant women and infants get priority scheduling (federal rules cap their wait at 10 days).${ag.online ? ` ${c.stateName} also accepts online applications, which shortens the visit.` : ''}` },
   { q:`What should I bring to apply?`, a:`Four things: photo ID, proof of address, proof of income (recent pay stubs — or your Medicaid, SNAP or TANF card, which counts by itself), and the children applying. Full walkthrough in our application guide.` },
   { q:`What are the income limits right now?`, a:`For July 2026-June 2027: $40,034/year for a household of 2, $50,542 for 3, $61,050 for 4 (gross income, 185% of poverty). A pregnancy counts as at least one extra household member — and Medicaid, SNAP or TANF enrollment qualifies you automatically.` },
   { q:`Can fathers or grandparents bring the kids?`, a:`Yes — any parent or legal caregiver can apply for and manage WIC benefits for an eligible child. WIC is not limited to mothers.` }
@@ -60,10 +65,12 @@ const crumbs = {"@context":"https://schema.org","@type":"BreadcrumbList","itemLi
   <div class="migas"><a href="/">Home</a> › <a href={`/${c.stateSlug}/`}>{c.stateName}</a> › <a href={`/${c.stateSlug}/${c.citySlug}/`}>{c.city}</a> › {c.name.slice(0, 34)}</div>
   <span class="sello"><i class="fa-solid fa-seedling"></i> WIC clinic · {c.city}, {c.state}</span>
   <h1 style="font-size:1.65rem">{c.name}</h1>
-  {homonimo && <p style="margin-top:4px;font-weight:700;color:var(--coral2)"><i class="fa-solid fa-location-dot"></i> {colaUnica ? `${miCola} site` : `${calleCorta} location`}</p>}
+  {(homonimo || esGenerico) && <p style="margin-top:4px;font-weight:700;color:#a34a37"><i class="fa-solid fa-location-dot"></i> {colaUnica && homonimo ? `${miCola} site` : `${calleCorta}, ${c.city}`}</p>}
   <p class="lede">{lead}</p>
   <div class="botones">
-    {c.phone && <a class="boton" href={`tel:+1${c.phone.replace(/\D/g,'')}`}><i class="fa-solid fa-phone"></i> {c.phone}</a>}
+    {c.phone
+      ? <a class="boton" href={`tel:+1${c.phone.replace(/\D/g,'')}`}><i class="fa-solid fa-phone"></i> {c.phone}</a>
+      : (ag.tollFree && <a class="boton" href={`tel:${ag.tollFree.replace(/\D/g,'')}`}><i class="fa-solid fa-phone-volume"></i> {c.stateName} WIC: {ag.tollFree}</a>)}
     <a class="boton coral" href="/wic-income-guidelines/"><i class="fa-solid fa-table-list"></i> Income limits</a>
     <a class="boton linea" href="/how-to-apply-for-wic/"><i class="fa-solid fa-clipboard-check"></i> How to apply</a>
   </div>
@@ -74,7 +81,11 @@ const crumbs = {"@context":"https://schema.org","@type":"BreadcrumbList","itemLi
   <div class="bloque top">
     <div class="datos">
       <b>Address</b><span>{addr}</span>
-      {c.phone && <><b>Phone</b><span><a href={`tel:+1${c.phone.replace(/\D/g,'')}`}>{c.phone}</a></span></>}
+      {c.phone
+        ? <><b>Phone</b><span><a href={`tel:+1${c.phone.replace(/\D/g,'')}`}>{c.phone}</a></span></>
+        : <><b>Phone</b><span>Not listed for this site — call the {c.stateName} WIC line{ag.tollFree ? <> at <a href={`tel:${ag.tollFree.replace(/\D/g,'')}`}><strong>{ag.tollFree}</strong></a></> : ''} for referrals and appointments</span></>}
+      {c.phone && ag.tollFree && <><b>State line</b><span><a href={`tel:${ag.tollFree.replace(/\D/g,'')}`}>{ag.tollFree}</a> — {c.stateName} WIC hotline, if this clinic doesn't answer</span></>}
+      {ag.online && <><b>Apply online</b><span><span class="pil coral">{c.stateName} accepts online applications</span></span></>}
       <b>Services</b><span>WIC applications and certifications, eWIC benefits, nutrition counseling and referrals</span>
       <b>Serves</b><span>Pregnant and postpartum women, infants, and children under 5 in the {c.city} area</span>
     </div>
