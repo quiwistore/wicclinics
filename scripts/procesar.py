@@ -63,8 +63,15 @@ def norm_calle(s):
     return ' '.join(ABREV.get(w, w) for w in s.split())
 
 d = json.load(open('data/capturadas.json'))
+fuentes = list(d['clinicas'].values())
+try:
+    densos = json.load(open('data/capturadas-densos.json'))
+    fuentes += list(densos.values())
+    print(f'  (+ {len(densos)} del pase denso)')
+except Exception:
+    pass
 items, usados, vistos = [], {}, {}
-for v in d['clinicas'].values():
+for v in fuentes:
     if v['state'] not in STATES or not v['name'] or not v['city']: continue
     # dedupe real: mismo nombre + misma calle normalizada + mismo zip = misma clinica cargada 2 veces
     v['name'] = desescape(v['name']); v['street'] = desescape(v['street']); v['city'] = desescape(v['city'])
