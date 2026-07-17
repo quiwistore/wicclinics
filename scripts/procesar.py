@@ -64,12 +64,15 @@ def norm_calle(s):
 
 d = json.load(open('data/capturadas.json'))
 fuentes = list(d['clinicas'].values())
-try:
-    densos = json.load(open('data/capturadas-densos.json'))
-    fuentes += list(densos.values())
-    print(f'  (+ {len(densos)} del pase denso)')
-except Exception:
-    pass
+import glob as _g
+for _f in sorted(_g.glob('data/capturadas-densos*.json')):
+    try:
+        _d = json.load(open(_f))
+        _vals = list(_d['c'].values()) if isinstance(_d, dict) and 'c' in _d else list(_d.values())
+        fuentes += _vals
+        print(f'  (+ {len(_vals)} de {_f.split("/")[-1]})')
+    except Exception as e:
+        print(f'  (! {_f}: {e})')
 items, usados, vistos = [], {}, {}
 for v in fuentes:
     if v['state'] not in STATES or not v['name'] or not v['city']: continue
