@@ -8,7 +8,25 @@ const { c } = Astro.props;
 const hx = [...c.slug].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 997, 3);
 const addr = `${c.street}, ${c.city}, ${c.state} ${c.zip}`;
 const mapQ = encodeURIComponent(`${c.name}, ${addr}`);
-const near = clinics.filter(x => x.citySlug === c.citySlug && x.stateSlug === c.stateSlug && x.slug !== c.slug).slice(0, 5);
+const sameCity = clinics.filter(x => x.citySlug === c.citySlug && x.stateSlug === c.stateSlug && x.slug !== c.slug);
+const near = sameCity.slice(0, 5);
+const calleCorta = c.street.split(',')[0].replace(/\b(Suite|Ste|Unit|Apt|Room|Rm|Floor|Fl)\b.*$/i, '').trim();
+// presupuesto: title <= 65 chars reales
+const cola = ` — WIC Clinic in ${c.city}, ${c.state}`;
+const colaCorta = ` — WIC in ${c.city}, ${c.state}`;
+const usarCorta = cola.length + 24 > 65;
+const sufijo = usarCorta ? colaCorta : cola;
+const presu = Math.max(18, 65 - sufijo.length);
+const recortar = (t, n) => t.length > n ? t.slice(0, n - 1).replace(/[\s,\-–—]+$/, '') + '…' : t;
+const nombreCorto = recortar(c.name, presu);
+// homonimo: colisiona el nombre YA recortado con otro de la misma ciudad
+const homonimo = sameCity.some(x => recortar(x.name, presu).toLowerCase() === nombreCorto.toLowerCase());
+// diferenciador: la cola del nombre ("- Mobile", "- North Cambridge") si distingue; si no, la calle
+const cola2 = (t) => { const p2 = String(t).split(/\s+[-–—]\s+/); return p2.length > 1 ? p2[p2.length - 1].trim() : ''; };
+const miCola = cola2(c.name);
+const colaUnica = miCola && !sameCity.some(x => cola2(x.name).toLowerCase() === miCola.toLowerCase());
+const dif = colaUnica ? miCola : calleCorta;
+const nombreBase = String(c.name).split(/\s+[-–—]\s+/)[0].trim();
 const leads = [
   `${c.name} is a WIC clinic serving ${c.city}, ${c.stateName}, where families can apply for WIC, complete certifications and pick up nutrition support. Phone and address below, plus what to bring.`,
   `Looking for WIC in ${c.city}? ${c.name} handles applications, eWIC card services and nutrition appointments for the area. Call ahead to book — details below.`,
@@ -17,8 +35,10 @@ const leads = [
   `${c.name} serves WIC families in and around ${c.city}, ${c.stateName} — applications, health checks and benefit issuance. Here's how to reach them and what to expect.`
 ];
 const lead = leads[hx % 5];
-const title = `${c.name} — WIC Clinic in ${c.city}, ${c.state} (Phone & Appointments)`;
-const desc = `${c.name} in ${c.city}, ${c.stateName}: ${c.phone ? `phone ${c.phone}, ` : ''}address ${c.street}. How to apply for WIC here, documents needed and appointment info.`;
+const title = homonimo
+  ? `${recortar(nombreBase, Math.max(12, presu - 18))} (${recortar(dif, 16)}) — WIC in ${c.city}, ${c.state}`
+  : `${nombreCorto}${sufijo}`;
+const desc = `${c.name} at ${calleCorta}, ${c.city}, ${c.stateName}${c.phone ? ` — phone ${c.phone}` : ''}. How to apply for WIC here, the documents to bring, income limits and appointment info.`;
 const schema = { "@context":"https://schema.org","@type":"GovernmentOffice","name":c.name,
   "address":{"@type":"PostalAddress","streetAddress":c.street,"addressLocality":c.city,"addressRegion":c.state,"postalCode":c.zip,"addressCountry":"US"},
   ...(c.phone ? {"telephone": c.phone} : {}),"url":new URL(Astro.url.pathname, Astro.site).href };
@@ -40,6 +60,7 @@ const crumbs = {"@context":"https://schema.org","@type":"BreadcrumbList","itemLi
   <div class="migas"><a href="/">Home</a> › <a href={`/${c.stateSlug}/`}>{c.stateName}</a> › <a href={`/${c.stateSlug}/${c.citySlug}/`}>{c.city}</a> › {c.name.slice(0, 34)}</div>
   <span class="sello"><i class="fa-solid fa-seedling"></i> WIC clinic · {c.city}, {c.state}</span>
   <h1 style="font-size:1.65rem">{c.name}</h1>
+  {homonimo && <p style="margin-top:4px;font-weight:700;color:var(--coral2)"><i class="fa-solid fa-location-dot"></i> {colaUnica ? `${miCola} site` : `${calleCorta} location`}</p>}
   <p class="lede">{lead}</p>
   <div class="botones">
     {c.phone && <a class="boton" href={`tel:+1${c.phone.replace(/\D/g,'')}`}><i class="fa-solid fa-phone"></i> {c.phone}</a>}

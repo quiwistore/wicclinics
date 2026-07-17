@@ -14,7 +14,7 @@ const { ci } = Astro.props;
 const n = ci.list.length;
 const ALIAS = { 'u-s-virgin-islands': 'virgin-islands' };
 const ag = agencies[ALIAS[ci.stateSlug] || ci.stateSlug] || {};
-const title = `WIC Office${n === 1 ? '' : 's'} in ${ci.city}, ${ci.st}: ${n === 1 ? 'Location, Phone' : n + ' Clinics with Phones'} & How to Apply`;
+const title = `WIC Office${n === 1 ? '' : 's'} in ${ci.city}, ${ci.st}: ${n === 1 ? 'Address & Phone' : `${n} Clinics + Phones`}`;
 const desc = `Where to apply for WIC in ${ci.city}, ${ci.stateName}: ${n} ${n === 1 ? 'clinic' : 'clinics'} with phone and address, current income limits and the documents to bring.`;
 const schemaCol = { "@context":"https://schema.org","@type":"CollectionPage","name":title,
   "mainEntity":{"@type":"ItemList","numberOfItems":n,"itemListElement":ci.list.map((c,i)=>({"@type":"ListItem","position":i+1,"name":c.name,"url":`https://wicclinics.com/clinic/${c.slug}/`}))}};

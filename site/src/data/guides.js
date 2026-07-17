@@ -66,7 +66,7 @@ export const guides = [
   },
   {
     slug: 'wic-eligibility',
-    title: 'WIC Eligibility 2026: Who Qualifies (Including If Your Income Seems Too High)',
+    title: 'WIC Eligibility 2026: Who Qualifies (Even If Income Seems High)',
     short: 'Who qualifies',
     icon: 'fa-user-check',
     hook: 'Four requirements — and the Medicaid backdoor most families miss.',
@@ -171,6 +171,33 @@ export const guides = [
       ['Do I need my kids with me at every appointment?', 'Mainly the first certification and periodic health checks. Many states allow video recertifications and proxy pickups in between — ask your clinic.'],
       ['What if I don\'t have all the documents?', 'Go anyway. Clinics can start with what you have; a sworn statement is generally accepted as a last resort, and you typically get 30 days to complete proof after enrollment.'],
       ['Is the blood test mandatory?', 'The iron screening is a standard part of nutritional risk assessment, done with a quick finger stick. If it\'s been done recently by your doctor, records can substitute — bring them.']
+    ]
+  }  ,
+  {
+    slug: 'wic-formula',
+    title: 'WIC Formula 2026: Which Brands Are Covered and How Much You Get',
+    short: 'WIC formula',
+    icon: 'fa-bottle-droplet',
+    hook: 'The single biggest benefit — often $150-250 a month, covered in full.',
+    quick: 'WIC covers iron-fortified infant formula in full for formula-fed babies — routinely $150-250 a month at retail. Each state contracts one primary brand (usually Similac, Enfamil or Gerber depending on the state), and that contract brand is what your eWIC card approves by default. Specialty and medical formulas are covered with documentation from your pediatrician. Amounts are set by your baby age and feeding category; the clinic configures it at certification.',
+    desc: 'How WIC formula works in 2026: which brands your state covers, monthly amounts by age, getting specialty or medical formula approved, and what to do if your store is out of stock.',
+    body: [
+      ['p', 'For a formula-feeding family, this single benefit usually dwarfs everything else WIC provides. It also causes the most confusion at the register — because WIC does not cover "formula" in the abstract, it covers <em>your state contract brand, in the sizes and amounts on your card</em>.'],
+      ['h2', 'The contract brand rule'],
+      ['ul', ['Every state signs a rebate contract with <strong>one manufacturer</strong> — commonly Similac, Enfamil or Gerber depending on the state. That brand is what your card approves.', 'This is why a formula that works in one state may not be covered across the border: the contract differs, not the rules.', 'Your clinic tells you the exact brand, type and can size at certification — and the state WIC app scans barcodes so you know before checkout.']],
+      ['h2', 'How much formula you get'],
+      ['ul', ['Amounts follow federal food package rules by <strong>age</strong> (0-3 months, 4-5 months, 6-11 months) and <strong>feeding category</strong> (fully formula-fed, partially breastfed, fully breastfed).', 'Fully formula-fed infants receive the maximum monthly allotment; partially breastfed infants receive a reduced amount alongside the mother\'s enhanced food package.', 'From 6 months, infant cereal and baby food fruits/vegetables are added; formula continues until the first birthday.']],
+      ['h2', 'Specialty and medical formula'],
+      ['ol', ['Talk to your pediatrician about the medical need (allergy, reflux, prematurity, metabolic conditions).', 'They complete the state medical documentation form — the clinic provides it, and this is routine paperwork, not a fight.', 'The clinic updates your benefits; specialty formulas are covered when documented, including many that cost far more than standard.']],
+      ['h2', 'When the shelf is empty'],
+      ['ul', ['Try other stores and sizes first — your card usually approves several can sizes of the contract brand.', '<strong>Call your clinic:</strong> during shortages, states issue waivers letting you buy alternate brands or sizes temporarily. This is the step most families skip.', 'Never dilute formula to stretch it, and avoid homemade formula — both are dangerous. The clinic will find you a covered option.']],
+      ['h2', 'Breastfeeding families get more, not less'],
+      ['p', 'Fully breastfeeding mothers receive the largest food package, extra produce dollars, canned fish, and <strong>free breast pumps</strong> plus lactation support. If you\'re combination feeding, the clinic can adjust your category as your needs change — a phone call, not a new application. See <a href="/what-does-wic-cover/">the full benefit list</a>.']
+    ],
+    faq: [
+      ['Can I switch to a different brand?', 'Only within your state contract, or with medical documentation. If your baby genuinely does not tolerate the contract formula, that is a medical conversation with your pediatrician — and documented switches are common.'],
+      ['Does WIC cover formula for a whole year?', 'Yes — formula benefits run until the baby\'s first birthday, when the package transitions to milk and toddler foods.'],
+      ['What if I run out before the month ends?', 'Benefits are set by federal amount tables and do not top up mid-cycle. Call your clinic: they can review your feeding category and check whether a different package fits your baby better.']
     ]
   }
 ];

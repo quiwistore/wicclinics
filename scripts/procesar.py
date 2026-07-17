@@ -7,27 +7,81 @@ def slugify(t):
     t = unicodedata.normalize('NFKD', str(t).lower()).encode('ascii','ignore').decode()
     return re.sub(r'[^a-z0-9]+','-',t).strip('-')
 
+MINUS = {'of','the','and','on','de','la','del','y'}
+def titlecase(t):
+    t = str(t).strip()
+    if not t: return t
+    out = []
+    for i, w in enumerate(re.split(r'(\s+|-|/)', t)):
+        if not w.strip() or w in ('-', '/'):
+            out.append(w); continue
+        lw = w.lower()
+        if i > 0 and lw in MINUS:
+            out.append(lw); continue
+        if lw.startswith('mc') and len(lw) > 3:
+            out.append('Mc' + lw[2].upper() + lw[3:])
+        elif lw.startswith('mac') and len(lw) > 4 and lw not in ('mackay','macon','macomb'):
+            out.append('Mac' + lw[3].upper() + lw[4:])
+        elif lw.startswith("o'") and len(lw) > 2:
+            out.append("O'" + lw[2].upper() + lw[3:])
+        elif lw in ('st','ste'):
+            out.append(lw.capitalize() + '.')
+        elif lw in ('ft',):
+            out.append('Ft.')
+        elif lw in ('us','ne','nw','se','sw','ii','iii','dc','nyc'):
+            out.append(lw.upper())
+        else:
+            out.append(lw.capitalize())
+    return ''.join(out)
+
 def fmt_tel(t):
     c = re.sub(r'\D','',str(t))
     return f'({c[0:3]}) {c[3:6]}-{c[6:10]}' if len(c)==10 else str(t).strip()
 
+ABREV = {'st':'street','str':'street','rd':'road','ave':'avenue','av':'avenue','blvd':'boulevard','hwy':'highway','dr':'drive','ln':'lane','ct':'court','pl':'place','pkwy':'parkway','cir':'circle','tpke':'turnpike','ste':'suite','n':'north','s':'south','e':'east','w':'west','ne':'northeast','nw':'northwest','se':'southeast','sw':'southwest'}
+def limpiar_calle(s, city, st):
+    s = str(s).strip()
+    s = re.sub(r',\s*(USA|United States)\s*$', '', s, flags=re.I)
+    s = re.sub(r',\s*' + re.escape(str(st)) + r'\s*(\d{5})?\s*$', '', s, flags=re.I)
+    s = re.sub(r',\s*' + re.escape(str(city)) + r'\s*$', '', s, flags=re.I)
+    return s.strip().rstrip(',').strip()
+
+def norm_calle(s):
+    s = re.sub(r',.*$', '', str(s).lower())
+    s = re.sub(r'[^a-z0-9 ]', ' ', s)
+    return ' '.join(ABREV.get(w, w) for w in s.split())
+
 d = json.load(open('data/capturadas.json'))
-items, usados = [], {}
+items, usados, vistos = [], {}, {}
 for v in d['clinicas'].values():
     if v['state'] not in STATES or not v['name'] or not v['city']: continue
+    # dedupe real: mismo nombre + misma calle normalizada + mismo zip = misma clinica cargada 2 veces
+    ident = (v['name'].strip().lower(), norm_calle(v['street']), v['zip'])
+    if ident in vistos:
+        # conservar la version con la calle mas descriptiva (mas larga)
+        prev = vistos[ident]
+        if len(v['street']) > len(prev['streetRaw']):
+            prev['street'] = titlecase(v['street']) if v['street'].isupper() else v['street']
+            prev['streetRaw'] = v['street']
+        if not prev['phone'] and v['phone']: prev['phone'] = fmt_tel(v['phone'])
+        continue
     base = slugify(v['name'])[:55] or 'clinic'
     slug = base if base not in usados else f"{base}-{slugify(v['city'])[:20]}"
     i = 2
     while slug in usados: slug = f'{base}-{i}'; i += 1
     usados[slug] = 1
-    items.append({
-        'slug': slug, 'name': v['name'], 'street': v['street'],
-        'city': v['city'].title() if v['city'].isupper() else v['city'],
+    reg = {
+        'slug': slug, 'name': (titlecase(v['name']).replace('Wic', 'WIC') if v['name'].isupper() else v['name'].replace(' Wic', ' WIC')), 'street': limpiar_calle(titlecase(v['street']) if v['street'].isupper() else v['street'], v['city'], v['state']),
+        'city': titlecase(v['city']),
         'state': v['state'], 'stateName': STATES[v['state']], 'zip': v['zip'],
         'phone': fmt_tel(v['phone']) if v['phone'] else '',
         'citySlug': slugify(v['city']), 'stateSlug': slugify(STATES[v['state']]),
-    })
+        'streetRaw': v['street'],
+    }
+    vistos[ident] = reg
+    items.append(reg)
 
+for x in items: x.pop('streetRaw', None)
 json.dump(items, open('site/src/data/clinics.json','w'), ensure_ascii=False)
 ciudades = set((x['stateSlug'], x['citySlug']) for x in items)
 print(f'clinics.json: {len(items)} clinicas | {len(set(x["state"] for x in items))} estados | {len(ciudades)} ciudades | tel: {sum(1 for x in items if x["phone"])}')

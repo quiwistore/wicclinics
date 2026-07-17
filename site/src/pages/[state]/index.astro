@@ -12,7 +12,9 @@ const cities = {};
 for (const c of s.list) (cities[c.citySlug] ||= { slug: c.citySlug, city: c.city, n: 0 }).n++;
 const ALIAS = { 'u-s-virgin-islands': 'virgin-islands', 'northern-mariana-islands': 'northern-mariana-islands' };
 const ag = agencies[ALIAS[s.slug] || s.slug] || null;
-const title = `WIC Offices in ${s.name}: ${s.list.length} Clinics${ag && ag.tollFree ? ` + State Hotline ${ag.tollFree}` : ''}`;
+const tituloBase = `WIC Offices in ${s.name}: ${s.list.length} Clinics by City`;
+const conHotline = `WIC Offices in ${s.name}: ${s.list.length} Clinics + Hotline`;
+const title = (ag && ag.tollFree && conHotline.length <= 65) ? conHotline : tituloBase;
 const desc = `All ${s.list.length} WIC clinics in ${s.name} by city with phone numbers${ag && ag.tollFree ? `, the state WIC hotline (${ag.tollFree})` : ''}${ag && ag.online ? ', online application info' : ''} — plus 2026-2027 income limits and how to apply.`;
 const schemaAg = ag ? { "@context":"https://schema.org","@type":"GovernmentOrganization","name":`${s.name} WIC Program`,
   ...(ag.dept ? {"parentOrganization": {"@type":"GovernmentOrganization","name": ag.dept}} : {}),
