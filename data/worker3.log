@@ -1,2 +1,18 @@
-worker 3: 1683 markers, 0 ya hechos
-[0/1683] clinicas: 1
+worker 3: 791 markers, 0 ya hechos
+[0/791] clinicas: 1
+[50/791] clinicas: 56
+[100/791] clinicas: 108
+[150/791] clinicas: 174
+[200/791] clinicas: 236
+[250/791] clinicas: 298
+[300/791] clinicas: 358
+[350/791] clinicas: 419
+[400/791] clinicas: 476
+[450/791] clinicas: 539
+[500/791] clinicas: 598
+[550/791] clinicas: 669
+[600/791] clinicas: 738
+[650/791] clinicas: 804
+[700/791] clinicas: 858
+[750/791] clinicas: 918
+FIN worker 3: 964 clinicas

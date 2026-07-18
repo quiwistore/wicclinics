@@ -62,23 +62,42 @@ def norm_calle(s):
     s = re.sub(r'[^a-z0-9 ]', ' ', s)
     return ' '.join(ABREV.get(w, w) for w in s.split())
 
-d = json.load(open('data/capturadas.json'))
-fuentes = list(d['clinicas'].values())
 import glob as _g
+fuentes = []
+# 1) dataset v2 (parser corregido: zip con cero inicial + ciudad en cualquier linea)
+_v2 = 0
+for _f in sorted(_g.glob('data/v2-*.json')):
+    try:
+        _d = json.load(open(_f))
+        _vals = list(_d['c'].values())
+        fuentes += _vals; _v2 += len(_vals)
+    except Exception as e:
+        print(f'  (! {_f}: {e})')
+print(f'  v2 (coordenadas, parser corregido): {_v2} registros')
+# 2) dataset viejo: solo lo que parseo bien (direcciones de 2 lineas)
+_old = 0
+_fuentes_old = list(json.load(open('data/capturadas.json'))['clinicas'].values())
 for _f in sorted(_g.glob('data/capturadas-densos*.json')):
     try:
         _d = json.load(open(_f))
-        _vals = list(_d['c'].values()) if isinstance(_d, dict) and 'c' in _d else list(_d.values())
-        fuentes += _vals
-        print(f'  (+ {len(_vals)} de {_f.split("/")[-1]})')
-    except Exception as e:
-        print(f'  (! {_f}: {e})')
+        _fuentes_old += list((_d['c'] if isinstance(_d, dict) and 'c' in _d else _d).values())
+    except Exception: pass
+for _v in _fuentes_old:
+    if _v.get('state') and _v.get('zip') and _v.get('city'):
+        fuentes.append(_v); _old += 1
+print(f'  pase viejo (solo registros validos): {_old} registros')
+
 items, usados, vistos = [], {}, {}
 for v in fuentes:
     if v['state'] not in STATES or not v['name'] or not v['city']: continue
     # dedupe real: mismo nombre + misma calle normalizada + mismo zip = misma clinica cargada 2 veces
     v['name'] = desescape(v['name']); v['street'] = desescape(v['street']); v['city'] = desescape(v['city'])
-    ident = (v['name'].strip().lower(), norm_calle(v['street']), v['zip'])
+    if v.get('extra') and not re.search(re.escape(v['extra'][:8]), v['street'], re.I):
+        v['street'] = f"{v['street']}, {desescape(v['extra'])}"
+    if v.get('zip'): v['zip'] = str(v['zip']).zfill(5)
+    # dedupe por nombre + calle + ciudad + estado (SIN zip: el origen carga el mismo
+    # consultorio con zips distintos; dos clinicas distintas no comparten nombre Y calle Y ciudad)
+    ident = (v['name'].strip().lower(), norm_calle(v['street']), str(v['city']).strip().lower(), v['state'])
     if ident in vistos:
         # conservar la version con la calle mas descriptiva (mas larga)
         prev = vistos[ident]

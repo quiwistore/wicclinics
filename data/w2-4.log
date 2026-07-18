@@ -1,0 +1,19 @@
+worker 4: 842 markers (0 hechos)
+[0/842] clinicas: 2
+[50/842] clinicas: 60
+[100/842] clinicas: 130
+[150/842] clinicas: 189
+[200/842] clinicas: 264
+[250/842] clinicas: 335
+[300/842] clinicas: 398
+[350/842] clinicas: 461
+[400/842] clinicas: 530
+[450/842] clinicas: 591
+[500/842] clinicas: 669
+[550/842] clinicas: 734
+[600/842] clinicas: 823
+[650/842] clinicas: 894
+[700/842] clinicas: 979
+[750/842] clinicas: 1043
+[800/842] clinicas: 1105
+FIN worker 4: 1159 clinicas
