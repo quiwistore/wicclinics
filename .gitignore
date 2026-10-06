@@ -3,3 +3,4 @@ site/node_modules/
 data/wic-*.html
 data/US.zip
 data/US.txt
+dist/ads.txt
