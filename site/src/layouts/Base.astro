@@ -3,8 +3,8 @@ const { title, desc, schema } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 // --- Checklist SEO (título ≤70, descripción ≤158, migas + BreadcrumbList en todas las páginas internas)
 const HOME = 'Home';
-const fitT = (x) => { if (!x || x.length <= 70) return x; let b = x; const SEP = [' | ', ' — ', ' – ', ', ', ': ', ' and ', ' και ', ' a ']; while (b.length > 70) { let k = -1; for (const z of SEP) k = Math.max(k, b.lastIndexOf(z)); if (k < 25) break; b = b.slice(0, k); } if (b.length > 70) b = b.slice(0, 70).replace(/\s+\S*$/, ''); return b.replace(/(\s+(in|of|for|the|and|to|at|a|en|de|del|la|el|y|και|στο|στη|του|της|v|ve|na|a|u|pro)|\s+[—–|,:-])+$/i, '').trim(); };
-const corta = (d) => { if (!d || d.length <= 158) return d; const c = d.slice(0, 158); const p = c.lastIndexOf('. '); return p > 90 ? c.slice(0, p + 1) : c.slice(0, c.lastIndexOf(' ')).replace(/[,;:–—-]+$/, '').replace(/(\s+[a-zà-ÿα-ωάέήίόύώčďěňřšťůž]{1,3})+$/u, '').replace(/[,;:–—-]+$/, '') + '.'; };
+const fitT = (x) => { if (!x || x.length <= 70) return x; let b = x; const SEP = [' | ', ' — ', ' – ', ': ', ' and ', ' και ', ' a ']; while (b.length > 70) { let k = -1; for (const z of SEP) k = Math.max(k, b.lastIndexOf(z)); if (k < 25) break; b = b.slice(0, k); } if (b.length > 70) b = b.slice(0, 70).replace(/\s+\S*$/, ''); return b.replace(/(\s+(in|of|for|the|and|to|at|a|en|de|del|la|el|y|και|στο|στη|του|της|v|ve|na|a|u|pro)|\s+[—–|,:-])+$/i, '').trim(); };
+const corta = (d) => { if (!d || d.length <= 158) return d; const c = d.slice(0, 158); const p = c.lastIndexOf('. '); return p > 90 ? c.slice(0, p + 1) : c.slice(0, c.lastIndexOf(' ')).replace(/[.,;:–—-]+$/, '').replace(/(\s+[a-zà-ÿα-ωάέήίόύώčďěňřšťůž]{1,3})+$/u, '').replace(/[,;:–—-]+$/, '') + '.'; };
 const titulo = fitT(title);
 const descF = corta(desc);
 const ruta = Astro.url.pathname;
